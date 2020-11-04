@@ -7,4 +7,15 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(survival)
+library(tidyverse)
 ```
+
+```{r}
+data
+placebo <- data %>% filter(treatment==1)
+prednison <- data %>% filter(treatment==0)
+survfit(surv(),data=data)
+```
+
+
