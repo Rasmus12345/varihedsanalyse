@@ -1,6 +1,6 @@
 ---
 title: "miniprojekt"
-author: "Rasmus Kragh Jørgensen"
+author: "Rasmus Kragh Jørgensen, Mia Steiner and Sofie Andersen"
 date: "4/11/2020"
 output: html_document
 ---
