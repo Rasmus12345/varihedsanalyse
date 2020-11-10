@@ -25,7 +25,7 @@ plot(fit,lty=c(1,2))#solid=placebo dashed=prednison
 survdiff(Surv(data$obstime, data$death)~data$treatment)#log-rank test
 
 ```
-We observe that the survival functions crosses each other. We observe from the log-rank test that the p-value is 0.4 wich indicates that there is no difference between the two groups. 
+We observe that the survival functions crosses each other. We observe from the log-rank test that the p-value is 0.4 wich indicates that there are no difference between the two groups.  
 
 
 
@@ -52,35 +52,35 @@ andersen.plot(andersen.fit,main="treatment")
 andersen.plot(andersen.fit2,main="sex")
 andersen.plot(andersen.fit3,main="ascites")
 ```
-It looks quite nice. in the ascites plot we obsverse a single outlier
+It looks linear which is nice. In the ascites plot we obsverse a single outlier. 
 
 
 ```{r}
 par(mfrow=c(1,2))
-hist(data$age %>% as.numeric,xlab="age")
-boxplot(data$age %>% as.numeric)
+hist(data$age %>% as.numeric,xlab="age",main = "")
+boxplot(data$age %>% as.numeric,ylab="Age")
 ```
 From the histogram we observe that the distributions is skewed to the right with a single observation to the left. 
-The boxplot shows that there are some observations who are outliers.  
+The boxplot shows that there are some observations who are outliers. The "outliers" are observed to be young people.    
 ```{r}
 par(mfrow=c(1,2))
-hist(data$prothrombin ,xlab="prothrombin")
-boxplot(data$prothrombin )
+hist(data$prothrombin ,xlab="prothrombin",main="")
+boxplot(data$prothrombin,ylab="prothrombin" )
 ```
-We observe from the historgram that there is a small tail to the right. The boxplot indicates that there isnt any point outside of the quantiles. 
+We observe from the historgram that there is a small tail to the right, but nothing of concern. The boxplot indicates that there isnt any point outside of the quantiles. 
 
 
 3. Within the framework of the fitted Cox regression model, test the null
 hypothesis of no effect of prednison treatment.
 ```{r}
-fit.cox <- coxph(Surv(data$obstime, data$death)~strata(data$treatment)+data$sex+data$ascites+as.numeric(data$age)+data$prothrombin,data = data)
-summary(fit.cox)
+#fit.cox <- coxph(Surv(data$obstime, data$death)~strata(data$treatment)+data$sex+data$ascites+as.numeric(data$age)+data$prothrombin,data = data)
+#summary(fit.cox)
 
 
 fit.coxtest <- coxph(Surv(data$obstime, data$death)~as.factor(data$treatment)+data$sex+data$ascites+data$age+data$prothrombin,data = data)
-#summary(fit.coxtest)
+summary(fit.coxtest)
 ```
-From the summary, we observe that the test-p-values are very low, hence we reject the null-hopothesis that the treatment has no effect. 
+From the summary, we observe that the the p-value for the treatment is non-significant, hence it is larger than 0.05, therefore we cannot reject the null-hypothesis: $H_0:\beta_{treatment}=0$. Hence we remove treatment as an effect. 
 
 
 
@@ -90,11 +90,9 @@ the continuous covariates age and prothrombin. Here you can use martingale resid
 We try to remove both age and prothrombin, one at the time
 ```{r}
 #we remove Age
-fit_2 <- coxph(Surv(data$obstime,data$death)~strata(data$treatment)+
-                     data$sex+data$ascites++data$prothrombin,data = data)
+fit_2 <- coxph(Surv(data$obstime,data$death)~data$sex+data$ascites++data$prothrombin,data = data)
 #We remove prothombin
-fit_3 <- coxph(Surv(data$obstime,data$death)~strata(data$treatment)+
-                     data$sex+data$ascites+as.numeric(data$age),data = data)
+fit_3 <- coxph(Surv(data$obstime,data$death)~data$sex+data$ascites+as.numeric(data$age),data = data)
 summary(fit_2)
 summary(fit_3)
 mart_2 <- residuals(fit_2)
@@ -110,12 +108,12 @@ Both scatter smooth plots looks approximately linear. Now we try to discretizati
 data$age <- data$age %>% as.numeric()
 hist(data$age)
 ```
-We discretize age in the interval 0-40,40-55,55-70,70-80
+We discretize age in the interval 0-40,40-55,55-70,70-80. 
 
 ```{r}
 data_trans_disc <- data
 data_trans_disc$age <-data_trans_disc$age %>% cut(breaks=c(0,40,55,70,80)) 
-fit_4 <- coxph(Surv(obstime,death)~strata(treatment)+sex+ascites+age,data = data_trans_disc)
+fit_4 <- coxph(Surv(obstime,death)~sex+ascites+age,data = data_trans_disc)
 summary(fit_4)
 mart_4 <- residuals(fit_4)
 scatter.smooth(data$age,mart_4,main="Disc of age")
@@ -124,30 +122,34 @@ Again it looks pretty linear. From the summery we observe that the interval age(
 
 ```{r}
 hist(data$prothrombin)
+
+```
+We discretize prothrombin in the interval 0-60,  60-80, 80-140.
+```{r}
 data_trans_disc <- data
 data_trans_disc$prothrombin <-data_trans_disc$prothrombin %>% cut(breaks=c(0,60,80,140)) 
-fit_5 <- coxph(Surv(obstime,death)~strata(treatment)+sex+ascites+prothrombin,data = data_trans_disc)
+fit_5 <- coxph(Surv(obstime,death)~sex+ascites+prothrombin,data = data_trans_disc)
 summary(fit_5)
 mart_5 <- residuals(fit_5)
 scatter.smooth(data$prothrombin,mart_5,main="Disc of prothombin")
 ```
+From the summary the intervals is significant. From the scatterploit it looks still linear.
 
 
-
-log-transform of age
+We try to log-transform of age
 ```{r}
 
 data_trans <- data
 data_trans$age <-data_trans$age %>% as.numeric() %>% log() 
-fit.trans <- coxph(Surv(data_trans$obstime,data_trans$death)~strata(data_trans$treatment)+
-                     data_trans$sex+data_trans$ascites+data_trans$age+data_trans$prothrombin,data = data_trans)
+fit.trans <- coxph(Surv(data_trans$obstime,data_trans$death)~ data_trans$sex+data_trans$ascites+data_trans$age+data_trans$prothrombin,data = data_trans)
 summary(fit.trans)
 mart.res <- residuals(fit.trans)
 scatter.smooth(data$age,mart.res)#martingale residuals
 
-AIC(fit_2,fit_3,fit_4,fit_5)
+AIC(fit.coxtest,fit_2,fit_3,fit_4,fit_5)
+
 ```
-We have conducted a log transformation of age effect. We observe that 
+We have conducted a log transformation of age effect. We observe that all variable are significant and the scatterplot looks linear. From the AIC-value it is observed that the model with the lowest AIC-value is the fit.coxtest which is the model whom contains all main facotr.   
 
 
 
@@ -158,7 +160,7 @@ fit_interact <- coxph(Surv(data$obstime,data$death)~data$treatment*data$ascites+
 summary(fit_interact)
 AIC(fit_interact)
 ```
-We tried to see the interaction between treatment and age, prothombin and sex, but these where non-significant, But the interaction between treatment and asciets is significant. 
+We tried to see the interaction between treatment and age, prothombin and sex, but these where non-significant, But the interaction between treatment and asciets is significant, treatment it self becomes significant and we obtain a lower AIC-value than before.  
 
 
 6. Give an estimate for the survival function for a prednison treated man,
@@ -179,5 +181,4 @@ esti_surv <- survfit(fit_interact,newdata = df_new)
 esti_surv
 summary(esti_surv,times = 2922)
 ```
-
-We observe a survival probability of 25.5%
+We observe  that the probability for the person to turn 65 years is 25.5%. 
